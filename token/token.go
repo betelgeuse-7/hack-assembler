@@ -28,14 +28,14 @@ const (
 	LABEL  TokenType = "LABEL"
 	NUMBER TokenType = "NUMBER"
 
-	AT        TokenType = "AT"        // @
-	EQ        TokenType = "EQ"        // =
-	PLUS      TokenType = "PLUS"      // +
-	MINUS     TokenType = "MINUS"     // -
-	AND       TokenType = "AND"       // &
-	OR        TokenType = "OR"        // |
-	LPAREN    TokenType = "LPAREN"    // (
-	RPAREN    TokenType = "RPAREN"    // )
+	AT    TokenType = "AT"    // @
+	EQ    TokenType = "EQ"    // =
+	PLUS  TokenType = "PLUS"  // +
+	MINUS TokenType = "MINUS" // -
+	AND   TokenType = "AND"   // &
+	OR    TokenType = "OR"    // |
+	//LPAREN    TokenType = "LPAREN"    // (
+	//RPAREN    TokenType = "RPAREN"    // )
 	SEMICOLON TokenType = "SEMICOLON" // ;
 
 	// ram address 0
