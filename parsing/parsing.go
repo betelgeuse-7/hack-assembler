@@ -8,23 +8,23 @@ import (
 
 type tokens []token.Token
 
-func (t tokens) hasEq() (int, bool) {
+func (t tokens) hasEq() (bool, int) {
 	for i, v := range t {
 		if v.Tok == token.EQ {
-			return i, true
+			return true, i
 		}
 	}
-	return -1, false
+	return false, -1
 }
 
 // also return the index of semicolon, if it exists, otherwise, -1
-func (t tokens) hasSemicolon() (int, bool) {
+func (t tokens) hasSemicolon() (bool, int) {
 	for i, v := range t {
 		if v.Tok == token.SEMICOLON {
-			return i, true
+			return true, i
 		}
 	}
-	return -1, false
+	return false, -1
 }
 
 type instrType string
@@ -66,12 +66,11 @@ type CInstruction struct {
 	rawInstr string
 	// populate these after parsing a C-instr
 	dest, comp, jump string
+	tokens           tokens
 }
 
-func NewCInstruction(rawInstr string) *CInstruction {
-	return &CInstruction{
-		rawInstr: rawInstr,
-	}
+func NewCInstruction() *CInstruction {
+	return &CInstruction{}
 }
 
 func (c *CInstruction) InstrType() instrType {
@@ -79,11 +78,14 @@ func (c *CInstruction) InstrType() instrType {
 }
 
 func (c *CInstruction) Instr() string {
+	for _, v := range c.tokens {
+		c.rawInstr += v.Lit
+	}
 	return c.rawInstr
 }
 
-func (c *CInstruction) appendRawInstr(instr string) {
-	c.rawInstr += instr
+func (c *CInstruction) appendToken(tok token.Token) {
+	c.tokens = append(c.tokens, tok)
 }
 
 func (c *CInstruction) Dest() string {
@@ -100,6 +102,49 @@ func (c *CInstruction) Jump() string {
 
 func (c *CInstruction) String() string {
 	return fmt.Sprintf("(dest: %s, comp: %s, jump: %s)", c.dest, c.comp, c.jump)
+}
+
+func (c *CInstruction) parseComp() {
+	tokens := c.tokens
+	if ok, ieq := tokens.hasEq(); ok {
+		if ok, isem := tokens.hasSemicolon(); ok {
+			for _, v := range tokens[ieq+1 : isem] {
+				c.comp += v.Lit
+			}
+			return
+		}
+		for _, v := range tokens[ieq+1:] {
+			c.comp += v.Lit
+		}
+		return
+	}
+	if ok, isem := tokens.hasSemicolon(); ok {
+		for _, v := range tokens[:isem] {
+			c.comp += v.Lit
+		}
+		return
+	}
+	for _, v := range tokens {
+		c.comp += v.Lit
+	}
+}
+
+func (c *CInstruction) parseDest() {
+	tokens := c.tokens
+	if ok, ieq := tokens.hasEq(); ok {
+		for _, v := range tokens[:ieq] {
+			c.dest += v.Lit
+		}
+	}
+}
+
+func (c *CInstruction) parseJump() {
+	tokens := c.tokens
+	if ok, isem := tokens.hasSemicolon(); ok {
+		for _, v := range tokens[isem+1:] {
+			c.jump += v.Lit
+		}
+	}
 }
 
 type Parser struct {
@@ -139,19 +184,11 @@ func (p *Parser) peek() token.TokenType {
 	return p.tokenStream[p.pos+1].Tok
 }
 
-func (p *Parser) peekAssert(expected token.TokenType) bool {
-	if ahead := p.peek(); ahead != expected {
-		return false
-	}
-	return true
-}
-
 // return the next instruction
 func (p *Parser) Next() Instruction {
 	switch p.curTok.Tok {
 	case token.AT:
 		return p.parseAInstruction()
-		// C-instr
 	default:
 		return p.parseCInstruction()
 	}
@@ -168,62 +205,30 @@ func (p *Parser) parseAInstruction() *AInstruction {
 	return instr
 }
 
-// TODO FIX THIS
+// bad code
+
 func (p *Parser) parseCInstruction() *CInstruction {
-	instr := NewCInstruction(p.curTok.Lit)
-	var cInstrTokens tokens
-	// go until token.AT (A instructions start with token.AT)
+	instr := NewCInstruction()
+	instr.appendToken(p.curTok)
 	for {
-		if p.curTok.Tok == token.EOF || p.curTok.Tok == token.AT {
+		p.advance()
+		if p.peek() == token.AT {
+			instr.appendToken(p.curTok)
 			break
 		}
-		cInstrTokens = append(cInstrTokens, p.curTok)
-		p.advance()
-	}
-	// do we have a dest?
-	if _, ok := cInstrTokens.hasEq(); ok {
-		var destTokens tokens
-		i := 0
-		for {
-			curCInstrTok := cInstrTokens[i]
-			if curCInstrTok.Tok == token.EQ {
-				break
-			}
-			destTokens = append(destTokens, curCInstrTok)
-			i++
+		if p.curTok.Tok == token.SEMICOLON {
+			instr.appendToken(p.curTok)
+			p.advance()
+			instr.appendToken(p.curTok)
+			break
+		} else if p.curTok.Tok == token.EOF {
+			break
 		}
-		dest := ""
-		for _, v := range destTokens {
-			dest += v.Lit
-		}
-		instr.dest = dest
+		instr.appendToken(p.curTok)
 	}
-	// do we have a jump
-	if index, ok := cInstrTokens.hasSemicolon(); ok {
-		index++
-		curCInstrTok := cInstrTokens[index]
-		instr.jump = curCInstrTok.Lit
-	}
-	// * set comp
-	comp := ""
-	if ieq, ok := cInstrTokens.hasEq(); ok {
-		if isem, ok := cInstrTokens.hasSemicolon(); ok {
-			compTokens := cInstrTokens[ieq+1 : isem]
-			for _, v := range compTokens {
-				comp += v.Lit
-			}
-		}
-		compTokens := cInstrTokens[ieq+1:]
-		for _, v := range compTokens {
-			comp += v.Lit
-		}
-	}
-	if isem, ok := cInstrTokens.hasSemicolon(); ok {
-		compTokens := cInstrTokens[0:isem]
-		for _, v := range compTokens {
-			comp += v.Lit
-		}
-	}
-	instr.comp = comp
+	instr.parseDest()
+	instr.parseComp()
+	instr.parseJump()
+	p.advance()
 	return instr
 }

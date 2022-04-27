@@ -37,6 +37,7 @@ const (
 	//LPAREN    TokenType = "LPAREN"    // (
 	//RPAREN    TokenType = "RPAREN"    // )
 	SEMICOLON TokenType = "SEMICOLON" // ;
+	BANG      TokenType = "BANG"      // !
 
 	// ram address 0
 	SP TokenType = "SP"

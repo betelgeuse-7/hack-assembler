@@ -81,6 +81,12 @@ func (l *Lexer) Lex() token.Token {
 			Tok: token.SEMICOLON,
 			Lit: ";",
 		}
+	case '!':
+		l.advance()
+		return token.Token{
+			Tok: token.BANG,
+			Lit: "!",
+		}
 	case '(':
 		return l.lexLabel()
 	}

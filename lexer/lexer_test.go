@@ -16,7 +16,8 @@ func TestLexerLex(t *testing.T) {
 			D;JMP 
 			D|M 
 			@ARG 
-			e`)
+			e
+			!A`)
 	want := `
 				(AT, @)
 			    (NUMBER, 10)
@@ -42,6 +43,8 @@ func TestLexerLex(t *testing.T) {
 				(AT, @)
 				(ARG, ARG)
 				(SYMBOL, e)
+				(BANG, !)
+				(A, A)
 		`
 	want = strings.Trim(want, " ")
 	want = strings.ReplaceAll(want, "\n", "")
