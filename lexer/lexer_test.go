@@ -7,7 +7,16 @@ import (
 )
 
 func TestLexerLex(t *testing.T) {
-	l := New("@10D=M;JGE(OUTPUT_FIRST) @R11D=M@hello\nD;JMP D|M ARG e")
+	l := New(`@10
+			D=M;JGE
+		(OUTPUT_FIRST)
+			@R11
+			D=M
+			@hello
+			D;JMP 
+			D|M 
+			@ARG 
+			e`)
 	want := `
 				(AT, @)
 			    (NUMBER, 10)
@@ -30,6 +39,7 @@ func TestLexerLex(t *testing.T) {
 				(D, D)
 				(OR, |)
 				(M, M)
+				(AT, @)
 				(ARG, ARG)
 				(SYMBOL, e)
 		`
