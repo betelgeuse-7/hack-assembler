@@ -4,28 +4,10 @@ package parsing
 import (
 	"assembler/token"
 	"fmt"
+	"strings"
 )
 
 type tokens []token.Token
-
-func (t tokens) hasEq() (bool, int) {
-	for i, v := range t {
-		if v.Tok == token.EQ {
-			return true, i
-		}
-	}
-	return false, -1
-}
-
-// also return the index of semicolon, if it exists, otherwise, -1
-func (t tokens) hasSemicolon() (bool, int) {
-	for i, v := range t {
-		if v.Tok == token.SEMICOLON {
-			return true, i
-		}
-	}
-	return false, -1
-}
 
 type instrType string
 
@@ -57,20 +39,16 @@ func (a *AInstruction) Instr() string {
 	return a.rawInstr
 }
 
-// append a new string to a.rawInstr
-func (a *AInstruction) appendRawInstr(instr string) {
-	a.rawInstr += instr
-}
-
 type CInstruction struct {
 	rawInstr string
 	// populate these after parsing a C-instr
 	dest, comp, jump string
-	tokens           tokens
 }
 
-func NewCInstruction() *CInstruction {
-	return &CInstruction{}
+func NewCInstruction(instr string) *CInstruction {
+	return &CInstruction{
+		rawInstr: instr,
+	}
 }
 
 func (c *CInstruction) InstrType() instrType {
@@ -78,14 +56,7 @@ func (c *CInstruction) InstrType() instrType {
 }
 
 func (c *CInstruction) Instr() string {
-	for _, v := range c.tokens {
-		c.rawInstr += v.Lit
-	}
 	return c.rawInstr
-}
-
-func (c *CInstruction) appendToken(tok token.Token) {
-	c.tokens = append(c.tokens, tok)
 }
 
 func (c *CInstruction) Dest() string {
@@ -104,46 +75,36 @@ func (c *CInstruction) String() string {
 	return fmt.Sprintf("(dest: %s, comp: %s, jump: %s)", c.dest, c.comp, c.jump)
 }
 
-func (c *CInstruction) parseComp() {
-	tokens := c.tokens
-	if ok, ieq := tokens.hasEq(); ok {
-		if ok, isem := tokens.hasSemicolon(); ok {
-			for _, v := range tokens[ieq+1 : isem] {
-				c.comp += v.Lit
-			}
-			return
-		}
-		for _, v := range tokens[ieq+1:] {
-			c.comp += v.Lit
-		}
-		return
-	}
-	if ok, isem := tokens.hasSemicolon(); ok {
-		for _, v := range tokens[:isem] {
-			c.comp += v.Lit
-		}
-		return
-	}
-	for _, v := range tokens {
-		c.comp += v.Lit
-	}
-}
-
 func (c *CInstruction) parseDest() {
-	tokens := c.tokens
-	if ok, ieq := tokens.hasEq(); ok {
-		for _, v := range tokens[:ieq] {
-			c.dest += v.Lit
-		}
+	instr := c.rawInstr
+	if strings.Contains(instr, "=") {
+		c.dest = strings.Split(instr, "=")[0]
 	}
 }
 
 func (c *CInstruction) parseJump() {
-	tokens := c.tokens
-	if ok, isem := tokens.hasSemicolon(); ok {
-		for _, v := range tokens[isem+1:] {
-			c.jump += v.Lit
-		}
+	instr := c.rawInstr
+	if strings.Contains(instr, ";") {
+		c.jump = strings.Split(instr, ";")[1]
+	}
+}
+
+func (c *CInstruction) parseComp() {
+	instr := c.rawInstr
+	hasDest := strings.Contains(instr, "=")
+	hasJump := strings.Contains(instr, ";")
+	if hasDest && hasJump {
+		destIdx := strings.Index(instr, "=")
+		jumpIdx := strings.Index(instr, ";")
+		c.comp = instr[destIdx+1 : jumpIdx]
+	} else if hasDest {
+		destIdx := strings.Index(instr, "=")
+		c.comp = instr[destIdx+1:]
+	} else if hasJump {
+		jumpIdx := strings.Index(instr, ";")
+		c.comp = instr[:jumpIdx]
+	} else {
+		c.comp = instr
 	}
 }
 
@@ -187,21 +148,7 @@ func (p *Parser) peek() token.TokenType {
 // return the next instruction
 func (p *Parser) Next() Instruction {
 	switch p.curTok.Tok {
-	case token.NEWLINE:
-		return p.decideAndParse()
-	case token.AT:
-		return p.parseAInstruction()
-	default:
-		return p.parseCInstruction()
-	}
-}
-
-func (p *Parser) decideAndParse() Instruction {
-	for p.curTok.Tok == token.NEWLINE {
-		p.advance()
-	}
-	switch p.curTok.Tok {
-	case token.AT:
+	case token.A_INSTR:
 		return p.parseAInstruction()
 	default:
 		return p.parseCInstruction()
@@ -209,39 +156,13 @@ func (p *Parser) decideAndParse() Instruction {
 }
 
 func (p *Parser) parseAInstruction() *AInstruction {
-	// since we assume that the given .asm file is error-free
-	// we don't assert that we have a valid integer constant after token.AT
 	instr := NewAInstruction(p.curTok.Lit)
-	p.advance()
-	instr.appendRawInstr(p.curTok.Lit)
-	// we parsed an A-instruction
 	p.advance()
 	return instr
 }
 
 func (p *Parser) parseCInstruction() *CInstruction {
-	instr := NewCInstruction()
-	instr.appendToken(p.curTok)
-	for {
-		p.advance()
-		if p.peek() == token.NEWLINE {
-			instr.appendToken(p.curTok)
-			break
-		}
-		if p.peek() == token.AT {
-			instr.appendToken(p.curTok)
-			break
-		}
-		if p.curTok.Tok == token.SEMICOLON {
-			instr.appendToken(p.curTok)
-			p.advance()
-			instr.appendToken(p.curTok)
-			break
-		} else if p.curTok.Tok == token.EOF {
-			break
-		}
-		instr.appendToken(p.curTok)
-	}
+	instr := NewCInstruction(p.curTok.Lit)
 	instr.parseDest()
 	instr.parseComp()
 	instr.parseJump()
