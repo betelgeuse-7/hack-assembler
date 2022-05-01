@@ -7,48 +7,38 @@ import (
 )
 
 func TestLexerLex(t *testing.T) {
-	l := New(`@10
+	l := New(`
+			@10
 			D=M;JGE
-		(OUTPUT_FIRST)
+			(OUTPUT_FIRST)
 			@R11
 			D=M
+			D
+			@ARG
+			!A
+			M=M+1;JNE
 			@hello
-			D;JMP 
-			D|M 
-			@ARG 
-			e
-			!A`)
+			1
+			-1
+		`)
 	want := `
-				(AT, @)
-			    (NUMBER, 10)
-				(D, D)
-				(EQ, =)
-				(M, M)
-				(SEMICOLON, ;)
-				(JGE, JGE)
-				(LABEL, (OUTPUT_FIRST))
-				(AT, @)
-				(R11, R11)
-				(D, D)
-				(EQ, =)
-				(M, M)
-				(AT, @)
-				(SYMBOL, hello)
-				(D, D)
-				(SEMICOLON, ;)
-				(JMP, JMP)
-				(D, D)
-				(OR, |)
-				(M, M)
-				(AT, @)
-				(ARG, ARG)
-				(SYMBOL, e)
-				(BANG, !)
-				(A, A)
-		`
+		(A_INSTR, @10)
+		(C_INSTR, D=M;JGE)
+		(LABEL, (OUTPUT_FIRST))
+		(A_INSTR, @R11)
+		(C_INSTR, D=M)
+		(C_INSTR, D)
+		(A_INSTR, @ARG)
+		(C_INSTR, !A)
+		(C_INSTR, M=M+1;JNE)
+		(A_INSTR, @hello)
+		(C_INSTR, 1)
+		(C_INSTR, -1)
+	`
+
 	want = strings.Trim(want, " ")
-	want = strings.ReplaceAll(want, "\n", "")
 	want = strings.ReplaceAll(want, "\t", "")
+	want = strings.ReplaceAll(want, "\n", "")
 	want = strings.ReplaceAll(want, " ", "")
 	want = strings.ReplaceAll(want, ",", ", ")
 

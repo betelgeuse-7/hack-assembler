@@ -187,6 +187,20 @@ func (p *Parser) peek() token.TokenType {
 // return the next instruction
 func (p *Parser) Next() Instruction {
 	switch p.curTok.Tok {
+	case token.NEWLINE:
+		return p.decideAndParse()
+	case token.AT:
+		return p.parseAInstruction()
+	default:
+		return p.parseCInstruction()
+	}
+}
+
+func (p *Parser) decideAndParse() Instruction {
+	for p.curTok.Tok == token.NEWLINE {
+		p.advance()
+	}
+	switch p.curTok.Tok {
 	case token.AT:
 		return p.parseAInstruction()
 	default:
@@ -205,13 +219,15 @@ func (p *Parser) parseAInstruction() *AInstruction {
 	return instr
 }
 
-// bad code
-
 func (p *Parser) parseCInstruction() *CInstruction {
 	instr := NewCInstruction()
 	instr.appendToken(p.curTok)
 	for {
 		p.advance()
+		if p.peek() == token.NEWLINE {
+			instr.appendToken(p.curTok)
+			break
+		}
 		if p.peek() == token.AT {
 			instr.appendToken(p.curTok)
 			break
