@@ -5,6 +5,7 @@ type TokenType string
 const (
 	EOF     TokenType = "EOF"
 	ILLEGAL TokenType = "ILLEGAL"
+	NEWLINE TokenType = "NEWLINE"
 
 	// address/data register
 	A TokenType = "A"

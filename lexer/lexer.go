@@ -39,6 +39,12 @@ func (l *Lexer) Lex() token.Token {
 	}
 
 	switch ch {
+	case '\n':
+		l.advance()
+		return token.Token{
+			Tok: token.NEWLINE,
+			Lit: "\n",
+		}
 	case '@':
 		l.advance()
 		return token.Token{
@@ -360,5 +366,5 @@ func isAsciiLetter(ch byte) bool {
 }
 
 func isWhitespace(ch byte) bool {
-	return ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r'
+	return ch == ' ' || ch == '\t' || ch == '\r'
 }

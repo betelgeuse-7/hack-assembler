@@ -17,37 +17,58 @@ func TestLexerLex(t *testing.T) {
 			D|M 
 			@ARG 
 			e
-			!A`)
-	want := `
-				(AT, @)
-			    (NUMBER, 10)
-				(D, D)
-				(EQ, =)
-				(M, M)
-				(SEMICOLON, ;)
-				(JGE, JGE)
-				(LABEL, (OUTPUT_FIRST))
-				(AT, @)
-				(R11, R11)
-				(D, D)
-				(EQ, =)
-				(M, M)
-				(AT, @)
-				(SYMBOL, hello)
-				(D, D)
-				(SEMICOLON, ;)
-				(JMP, JMP)
-				(D, D)
-				(OR, |)
-				(M, M)
-				(AT, @)
-				(ARG, ARG)
-				(SYMBOL, e)
-				(BANG, !)
-				(A, A)
-		`
+			!A
+			D
+			M=M+1;JNE`)
+	want := "" +
+		"(AT, @)" +
+		"(NUMBER, 10)" +
+		"(NEWLINE, \n)" +
+		"(D, D)" +
+		"(EQ, =)" +
+		"(M, M)" +
+		"(SEMICOLON, ;)" +
+		"(JGE, JGE)" +
+		"(NEWLINE, \n)" +
+		"(LABEL, (OUTPUT_FIRST))" +
+		"(NEWLINE, \n)" +
+		"(AT, @)" +
+		"(R11, R11)" +
+		"(NEWLINE, \n)" +
+		"(D, D)" +
+		"(EQ, =)" +
+		"(M, M)" +
+		"(NEWLINE, \n)" +
+		"(AT, @)" +
+		"(SYMBOL, hello)" +
+		"(NEWLINE, \n)" +
+		"(D, D)" +
+		"(SEMICOLON, ;)" +
+		"(JMP, JMP)" +
+		"(NEWLINE, \n)" +
+		"(D, D)" +
+		"(OR, |)" +
+		"(M, M)" +
+		"(NEWLINE, \n)" +
+		"(AT, @)" +
+		"(ARG, ARG)" +
+		"(NEWLINE, \n)" +
+		"(SYMBOL, e)" +
+		"(NEWLINE, \n)" +
+		"(BANG, !)" +
+		"(A, A)" +
+		"(NEWLINE, \n)" +
+		"(D, D)" +
+		"(NEWLINE, \n)" +
+		"(M, M)" +
+		"(EQ, =)" +
+		"(M, M)" +
+		"(PLUS, +)" +
+		"(NUMBER, 1)" +
+		"(SEMICOLON, ;)" +
+		"(JNE, JNE)"
+
 	want = strings.Trim(want, " ")
-	want = strings.ReplaceAll(want, "\n", "")
 	want = strings.ReplaceAll(want, "\t", "")
 	want = strings.ReplaceAll(want, " ", "")
 	want = strings.ReplaceAll(want, ",", ", ")
