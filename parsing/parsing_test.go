@@ -8,6 +8,8 @@ import (
 
 func TestParserNext(t *testing.T) {
 	input := `
+
+
 		@16
 		D=A;JEQ
 		D=M;JMP
@@ -17,6 +19,7 @@ func TestParserNext(t *testing.T) {
 		M=M+1;JNE
 		@128
 		D=!D
+		@ARG
 	`
 	l := lexer.New(input)
 	lexed := tokens{}
@@ -39,6 +42,7 @@ func TestParserNext(t *testing.T) {
 		&CInstruction{rawInstr: "M=M+1;JNE", dest: "M", comp: "M+1", jump: "JNE"},
 		&AInstruction{rawInstr: "@128"},
 		&CInstruction{rawInstr: "D=!D", dest: "D", comp: "!D", jump: ""},
+		&AInstruction{rawInstr: "@ARG"},
 	}
 
 	i := 0
@@ -74,6 +78,7 @@ func TestParserNext(t *testing.T) {
 	}
 }
 
+/*
 func TestPeek(t *testing.T) {
 	input := tokens{
 		{Tok: token.AT, Lit: "@"},
@@ -107,3 +112,4 @@ func TestPeek(t *testing.T) {
 		t.Errorf("expected %s, got %s\n", want, got)
 	}
 }
+*/
