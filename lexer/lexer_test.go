@@ -20,7 +20,7 @@ func TestLexerLex(t *testing.T) {
 			@hello
 			1
 			-1
-		`)
+			`)
 	want := `
 		(A_INSTR, @10)
 		(C_INSTR, D=M;JGE)

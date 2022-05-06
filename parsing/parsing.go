@@ -2,6 +2,7 @@
 package parsing
 
 import (
+	"assembler/lexer"
 	"assembler/token"
 	"fmt"
 	"strings"
@@ -123,8 +124,30 @@ func New(tokenStream tokens) *Parser {
 	return p
 }
 
+func NewWithLexer(lexer *lexer.Lexer) *Parser {
+	tokenStream := tokens{}
+	for {
+		t := lexer.Lex()
+		if t.Tok == token.EOF {
+			break
+		}
+		tokenStream = append(tokenStream, t)
+	}
+	p := &Parser{
+		tokenStream: tokenStream,
+		pos:         0,
+	}
+	p.curTok = tokenStream[p.pos]
+	return p
+}
+
 func (p *Parser) CurTokIsEOF() bool {
 	return p.curTok.Tok == token.EOF
+}
+
+func (p *Parser) ShouldHalt() bool {
+	tsLen := len(p.tokenStream)
+	return p.pos == tsLen
 }
 
 // p.pos++, p.curTok = p.tokenStream[p.pos]

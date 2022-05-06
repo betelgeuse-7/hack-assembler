@@ -66,15 +66,15 @@ func CompileCInstruction(instruction *parsing.CInstruction) string {
 	// 1 1 1 a c1 c2 c3 c4 c5 c6 d1 d2 d3 j1 j2 j3
 	bin := "111"
 	comp := instruction.Comp()
-	compRefVal, ok := compRefAIsZero[comp]
-	if ok {
-		bin += "0" + compRefVal
+	a0Val, aIsZero := compRefAIsZero[comp]
+	a1Val, aIsOne := compRefAIsOne[comp]
+	if aIsZero {
+		bin += "0" + a0Val
+	} else if aIsOne {
+		bin += "1" + a1Val
+	} else {
+		panic("invalid comp " + comp + "\n")
 	}
-	compRefVal, ok = compRefAIsOne[comp]
-	if !ok {
-		panic("invalid comp, " + comp + "\n")
-	}
-	bin += "1" + compRefVal
 	// check if there is a dest
 	if dest := instruction.Dest(); len(dest) != 0 {
 		destRefVal, ok := destRef[dest]
@@ -82,6 +82,8 @@ func CompileCInstruction(instruction *parsing.CInstruction) string {
 			panic("invalid dest, " + dest + "\n")
 		}
 		bin += destRefVal
+	} else {
+		bin += "000"
 	}
 	// check jump
 	if jump := instruction.Jump(); len(jump) != 0 {

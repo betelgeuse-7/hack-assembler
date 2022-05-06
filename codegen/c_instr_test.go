@@ -3,7 +3,6 @@ package codegen
 import (
 	"assembler/lexer"
 	"assembler/parsing"
-	"assembler/token"
 	"fmt"
 	"testing"
 )
@@ -13,22 +12,19 @@ func TestCompileCInstruction(t *testing.T) {
 		D=M
 		D;JGE
 		A=D;JMP
+		D
+		A;JNE
 		`
 	want := []string{
 		"1111110000010000",
 		"1110001100000011",
 		"1110001100100111",
+		"1110001100000000",
+		"1110110000000101",
 	}
 	l := lexer.New(input)
-	var tokens []token.Token
-	for {
-		tok := l.Lex()
-		tokens = append(tokens, tok)
-		if tok.Tok == token.EOF {
-			break
-		}
-	}
-	p := parsing.New(tokens)
+	p := parsing.NewWithLexer(l)
+	fmt.Println("codegen: test: got parser")
 	i := 0
 	for {
 		if p.CurTokIsEOF() {
@@ -39,6 +35,9 @@ func TestCompileCInstruction(t *testing.T) {
 		bin := CompileCInstruction(parsed.(*parsing.CInstruction))
 		if bin != want[i] {
 			t.Errorf("at index %d, expected %s, but got %s\n", i, want[i], bin)
+		}
+		if bl := len(bin); bl != 16 {
+			t.Errorf("bin length is not 16, but %d\n", bl)
 		}
 		i++
 	}

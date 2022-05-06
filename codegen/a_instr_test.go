@@ -3,7 +3,6 @@ package codegen
 import (
 	"assembler/lexer"
 	"assembler/parsing"
-	"assembler/token"
 	"testing"
 )
 
@@ -17,15 +16,7 @@ func TestNewAInstruction(t *testing.T) {
 		"0000000000010000",
 	}
 	l := lexer.New(input)
-	var tokens []token.Token
-	for {
-		tok := l.Lex()
-		tokens = append(tokens, tok)
-		if tok.Tok == token.EOF {
-			break
-		}
-	}
-	p := parsing.New(tokens)
+	p := parsing.NewWithLexer(l)
 	i := 0
 	for {
 		if p.CurTokIsEOF() {

@@ -40,6 +40,9 @@ func (l *Lexer) Lex() token.Token {
 		return l.lexLabel()
 	case 'A', 'M', 'D', '-', '!', '0', '1':
 		return l.lexCInstr()
+	case '/':
+		l.eatComment()
+		return l.Lex()
 	}
 	l.advance()
 	return token.Token{
@@ -82,7 +85,7 @@ func (l *Lexer) lexLabel() token.Token {
 func (l *Lexer) lexAInstr() token.Token {
 	res := string(l.ch)
 	l.advance()
-	for l.ch != '\n' {
+	for l.ch != '\n' && l.ch != ' ' && l.ch != '/' {
 		res += string(l.ch)
 		l.advance()
 	}
@@ -95,7 +98,7 @@ func (l *Lexer) lexAInstr() token.Token {
 func (l *Lexer) lexCInstr() token.Token {
 	res := string(l.ch)
 	l.advance()
-	for l.ch != '\n' && l.ch != '@' {
+	for l.ch != '\n' && l.ch != '@' && l.ch != ' ' && l.ch != '/' {
 		res += string(l.ch)
 		l.advance()
 	}
@@ -107,6 +110,12 @@ func (l *Lexer) lexCInstr() token.Token {
 
 func (l *Lexer) eatWhitespace() {
 	for isWhitespace(l.ch) {
+		l.advance()
+	}
+}
+
+func (l *Lexer) eatComment() {
+	for l.ch != '\n' {
 		l.advance()
 	}
 }
