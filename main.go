@@ -22,7 +22,7 @@ func main() {
 	if err != nil {
 		panic("error while creating the output file, " + err.Error() + "\n")
 	}
-	fmt.Println("input : " + string(bx))
+	fmt.Println(string(bx))
 	/*
 		lexer needs a newline at the very end of the input.
 		so i am appending it at the end.

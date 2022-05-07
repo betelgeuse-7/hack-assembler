@@ -15,4 +15,4 @@ D=M
 M=D
 // yes
 @14
-D;JMP
+0;JMP
