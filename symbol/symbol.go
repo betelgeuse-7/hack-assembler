@@ -33,36 +33,44 @@ const (
 	kbd    = "@24576"
 )
 
+// resolve all symbols, variables to a bunch of a-instructions with constant decimal values
 func Resolve(tokens tokens) tokens {
 	tokens = resolveBuiltins(tokens)
 	tokens = resolveLabels(tokens)
-	//tokens = resolveVars(tokens)
+	tokens = resolveVars(tokens)
 	return tokens
 }
 
+// substitute label references (e.g @LOOP), with their constant values using the env map returned from translateLabels
 func resolveLabels(tokens tokens) tokens {
 	tt := []token.Token{}
 	tokens, env := translateLabels(tokens)
-	fmt.Println("resolveLabels -> env = ", env)
-	fmt.Println("resolveLabels -> tt = ", tt)
 	for _, tok := range tokens {
-		if tok.Lit[0] == '@' && isUpperCase(tok.Lit) {
+		if isNotABuiltinVar(tok.Lit) && tok.Lit[0] == '@' && isUpperCase(tok.Lit[1:]) {
 			// get rid of @ and add paranthesis
 			key := fmt.Sprintf("(%s)", tok.Lit[1:])
-			fmt.Println("key-> ", key)
 			tok.Lit = "@" + env[key]
 		}
 		tt = append(tt, tok)
 	}
-	fmt.Println("tt.end -> ", tt)
 	return tt
 }
 
+// return tokens without label declarations, and a map that stores values matching label declarations
+// with their constant values.
+// 	e.g
+//	...
+//	5   (LOOP)   // this is stored in env (map) like that: (LOOP): 5
+//	6	0;JMP
+//	7	@LOOP	 // in resolveLabels, this is translated to @5, using the env map returned from this function
+//	8
+//	...
 func translateLabels(tokens tokens) (tokens, map[string]string) {
 	env := map[string]string{}
 	tt := []token.Token{}
 	for i, tok := range tokens {
 		if tok.Tok == token.LABEL {
+			i -= len(env)
 			env[tok.Lit] = fmt.Sprintf("%d", i)
 			continue
 		}
@@ -72,6 +80,7 @@ func translateLabels(tokens tokens) (tokens, map[string]string) {
 	return tt, env
 }
 
+// substitute built-in symbols with a-instructions that have constant decimal values
 func resolveBuiltins(tokens tokens) tokens {
 	tt := []token.Token{}
 	for _, tok := range tokens {
@@ -126,6 +135,42 @@ func resolveBuiltins(tokens tokens) tokens {
 		tt = append(tt, tok)
 	}
 	return tt
+}
+
+// substitute variables with their values using env map
+// just like resolveLabels
+func resolveVars(tokens tokens) tokens {
+	tt := []token.Token{}
+	tokens, env := translateVars(tokens)
+	for _, tok := range tokens {
+		key := tok.Lit[1:]
+		if tok.Lit[0] == '@' && !isUpperCase(key) && isNotAllDigits(tok.Lit) {
+			tok.Lit = "@" + env[key]
+		}
+		tt = append(tt, tok)
+	}
+	return tt
+}
+
+// very similar to translateLabels, but this is giving user-defined variables a constant decimal value
+// first variable gets 16, the second gets 17, and so on...
+// when we first encounter a new variable (user-defined variables must be not-all-uppercase, and they must include at least one ASCII character)
+// , we set a key in env, with its constant value.
+//
+// returns tokens, and the env map
+func translateVars(tokens tokens) (tokens, map[string]string) {
+	env := map[string]string{}
+	tt := []token.Token{}
+	for _, tok := range tokens {
+		key := tok.Lit[1:]
+		if _, alreadyThere := env[key]; !alreadyThere {
+			if tok.Tok == token.A_INSTR && !isUpperCase(tok.Lit) {
+				env[key] = fmt.Sprintf("%d", 16+len(env))
+			}
+		}
+		tt = append(tt, tok)
+	}
+	return tt, env
 }
 
 func isNotABuiltinVar(str string) bool {

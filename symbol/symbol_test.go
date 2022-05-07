@@ -9,10 +9,14 @@ import (
 
 func TestResolve(t *testing.T) {
 	l := lexer.New(`
+	// hellooooooooooooooooooooooooooooooooooo
+		@hello
+		@i
 		@10
-			(OUTPUT_FIRST)
+			(OUTPUT_FIRST) // heya
 		@R11
 		@LEX
+			(FIRE)
 		@ARG
 		@SP
 		@LCL
@@ -24,6 +28,7 @@ func TestResolve(t *testing.T) {
 		@OUTPUT_FIRST
 		@R5
 		D=M;JMP
+		@FIRE
 	`)
 	tt := []token.Token{}
 	for {
@@ -34,9 +39,11 @@ func TestResolve(t *testing.T) {
 		}
 	}
 	want := `
+		(A_INSTR, @16)
+		(A_INSTR, @17)
 		(A_INSTR, @10)
 		(A_INSTR, @11)
-		(A_INSTR, @7)
+		(A_INSTR, @8)
 		(A_INSTR, @2)
 		(A_INSTR, @0)
 		(A_INSTR, @1)
@@ -44,9 +51,10 @@ func TestResolve(t *testing.T) {
 		(A_INSTR, @4)
 		(A_INSTR, @16384)
 		(A_INSTR, @24576)
-		(A_INSTR, @1)
+		(A_INSTR, @3)
 		(A_INSTR, @5)		
 		(C_INSTR, D=M;JMP)
+		(A_INSTR, @5)
 		`
 	want = strings.Trim(want, " ")
 	want = strings.ReplaceAll(want, "\t", "")
