@@ -1,6 +1,8 @@
 package codegen
 
-import "strconv"
+import (
+	"strconv"
+)
 
 // return an int in binary format
 func decToBin(val string) string {
